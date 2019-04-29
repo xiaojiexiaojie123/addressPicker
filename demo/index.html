@@ -2,15 +2,59 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+    <meta content="yes" name="apple-touch-fullscreen">
+    <meta content="telephone=no,email=no" name="format-detection">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 	<title>addressPicker</title>
+	<script type="text/javascript">
+        var designWidth = 750, rem2px = 100;
+        var html = document.querySelector("html");
+        var htmlFontSize = parseFloat(window.getComputedStyle(html, null).getPropertyValue('font-size'));
+
+        function refreshRem() {
+            html.style.fontSize = html.getBoundingClientRect().width / designWidth * rem2px / htmlFontSize * 100 + '%';
+        }
+
+        refreshRem();
+        window.addEventListener("resize", function () {
+            refreshRem();
+        });
+    </script>
 	<link rel="stylesheet" type="text/css" href="../src/addressPicker.css">
+	<style type="text/css">
+		html {
+            min-height: 100%;
+            overflow-x: hidden;
+            font-size: 312.5%;
+            line-height: 1;
+        }
+	</style>
 </head>
 <body>
 	
+	<button id="picker" style="width: 100px;height: 40px;">地址控件</button>
+	<button id="datepicker" style="width: 100px;height: 40px;">日期控件</button>
 
+
+<script type="text/javascript" src="../src/area.js"></script>
 <script type="text/javascript" src="../src/addressPicker.js"></script>
+<script type="text/javascript" src="../src/datePicker.js"></script>
 <script type="text/javascript">
-	
+window.onload = function () {
+	var address = new addressPicker();
+	address.init({
+		'trigger': '#picker',
+		'type': 'country'
+	})
+
+	var datePicker1 = new datePicker();
+	datePicker1.init({
+		'trigger': '#datepicker',
+		'type': 'ym'
+	})
+
+}
 </script>
 </body>
 </html>

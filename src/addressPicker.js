@@ -1,7 +1,7 @@
 
 //addressPicker地址控件 v1.0.0
 
-window.datePicker = (function() {
+window.addressPicker = (function() {
     var AddressCalendar = function() {
         this.gearDate;
         this.minY = 1900;
@@ -12,36 +12,16 @@ window.datePicker = (function() {
         this.maxD = 31;
         this.value="";
         this.title = "";
+        this.type = "";
+        this.areaData = areaData;
+        this.provinceCount = areaData.length;
     };
     AddressCalendar.prototype = {
         init: function(params) {
-            this.level = params.level; // 级别（省、市、县）
-            // this.defaults = params.defaults; // 默认地区
+            this.defaults = params.defaults; // 默认地区
             this.trigger = document.querySelector(params.trigger);
-            // this.title = params.title ? params.title : "";
-            if (this.trigger.getAttribute("data-lcalendar") != null) {
-                var arr = this.trigger.getAttribute("data-lcalendar").split(',');
-                var minArr = arr[0].split('-');
-                this.minY = ~~minArr[0];
-                this.minM = ~~minArr[1];
-                this.minD = ~~minArr[2];
-                var maxArr = arr[1].split('-');
-                this.maxY = ~~maxArr[0];
-                this.maxM = ~~maxArr[1];
-                this.maxD = ~~maxArr[2];
-            };
-            if (params.minDate) {
-                var minArr = params.minDate.split('-');
-                this.minY = ~~minArr[0];
-                this.minM = ~~minArr[1];
-                this.minD = ~~minArr[2];
-            };
-            if (params.maxDate) {
-                var maxArr = params.maxDate.split('-');
-                this.maxY = ~~maxArr[0];
-                this.maxM = ~~maxArr[1];
-                this.maxD = ~~maxArr[2];
-            };
+            this.title = params.title ? params.title : "";
+            this.type = params.type ? params.type : "province";
             this.onClose= params.onClose;
             this.onSubmit= params.onSubmit;
             this.onChange= params.onChange;
@@ -51,8 +31,8 @@ window.datePicker = (function() {
             var _self = this;
             var isTouched = false , isMoved = false;
             var pree;
-            //呼出日期插件
-            function popupDate(e) {
+            //呼出省份插件
+            function popupProvince(e) {
                 _self.gearDate = document.createElement("div");
                 _self.gearDate.className = "gearDate";
                 _self.gearDate.innerHTML = '<div class="date_ctrl slideInUp">' +
@@ -66,96 +46,40 @@ window.datePicker = (function() {
                     '<div>' +
                     '<div class="gear date_yy" data-datetype="date_yy"></div>' +
                     '<div class="date_grid">' +
-                    '<div>年</div>' +
                     '</div>' +
-                    '</div>' +
-                    '<div>' +
-                    '<div class="gear date_mm" data-datetype="date_mm"></div>' +
-                    '<div class="date_grid">' +
-                    '<div>月</div>' +
-                    '</div>' +
-                    '</div>' +
-                    '<div>' +
-                    '<div class="gear date_dd" data-datetype="date_dd"></div>' +
-                    '<div class="date_grid">' +
-                    '<div>日</div>' +
                     '</div>' +
                     '</div>' +
                     '</div>' +
                     '</div>' +
                     '</div><div class="date_bg" style="width:100%;height:100%;"></div>';
                 document.body.appendChild(_self.gearDate);
-                dateCtrlInit(defaults); // 增加参数(修改原插件-hxj)
+                provinceCtrlInit(defaults); // 增加参数(修改原插件-hxj)
                 var lcalendar_cancel = _self.gearDate.querySelector(".lcalendar_cancel");
-                lcalendar_cancel.addEventListener('touchstart', closeAddressCalendar);
+                lcalendar_cancel.addEventListener('touchstart', closeAddressAlert);
                 var lcalendar_finish = _self.gearDate.querySelector(".lcalendar_finish");
                 lcalendar_finish.addEventListener('touchstart', finishMobileDate);
                 var lcalendar_bg = _self.gearDate.querySelector(".date_bg");
-                lcalendar_bg.addEventListener('click', closeAddressCalendar);
+                lcalendar_bg.addEventListener('click', closeAddressAlert);
                 var date_yy = _self.gearDate.querySelector(".date_yy");
-                var date_mm = _self.gearDate.querySelector(".date_mm");
-                var date_dd = _self.gearDate.querySelector(".date_dd");
                 date_yy.addEventListener('touchstart', gearTouchStart);
-                date_mm.addEventListener('touchstart', gearTouchStart);
-                date_dd.addEventListener('touchstart', gearTouchStart);
                 date_yy.addEventListener('touchmove', gearTouchMove);
-                date_mm.addEventListener('touchmove', gearTouchMove);
-                date_dd.addEventListener('touchmove', gearTouchMove);
                 date_yy.addEventListener('touchend', gearTouchEnd);
-                date_mm.addEventListener('touchend', gearTouchEnd);
-                date_dd.addEventListener('touchend', gearTouchEnd);
                 //-------------------------------------------------------------
-                lcalendar_cancel.addEventListener('click', closeAddressCalendar);
+                lcalendar_cancel.addEventListener('click', closeAddressAlert);
                 lcalendar_finish.addEventListener('click', finishMobileDate);
                 date_yy.addEventListener('mousedown', gearTouchStart);
-                date_mm.addEventListener('mousedown', gearTouchStart);
-                date_dd.addEventListener('mousedown', gearTouchStart);
                 date_yy.addEventListener('mousemove', gearTouchMove);
-                date_mm.addEventListener('mousemove', gearTouchMove);
-                date_dd.addEventListener('mousemove', gearTouchMove);
                 date_yy.addEventListener('mouseup', gearTouchEnd);
-                date_mm.addEventListener('mouseup', gearTouchEnd);
-                date_dd.addEventListener('mouseup', gearTouchEnd);
                 _self.gearDate.querySelector(".date_roll_mask").addEventListener('mouseleave', gearTouchOut);
                 _self.gearDate.querySelector(".date_roll_mask").addEventListener('mouseup', gearTouchOut);
             }
-            //初始化年月日插件默认值
-            function dateCtrlInit(defaults) {
-                /*
-                var date = new Date();
-                var dateArr = {
-                    yy: date.getYear(),
-                    mm: date.getMonth(),
-                    dd: date.getDate() - 1
-                };
-                */
-                // 以上注释代码为原插件所拥有, 现修改为以下代码(修改原插件-hxj)
-                /* 修改起始位置 */
-                var dateArr = {};
-                var hasDefaults = defaults != '' && defaults != null && defaults != undefined;
-                var date = hasDefaults ? new Date(defaults) : new Date();
-                var dateArr = {
-                    yy: date.getYear(),
-                    mm: date.getMonth(),
-                    dd: date.getDate() - 1
-                }
-                /* 修改结束位置 */
-
-                if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(_self.trigger.value)) {
-                    rs = _self.trigger.value.match(/(^|-)\d{1,4}/g);
-                    dateArr.yy = rs[0] - _self.minY;
-                    dateArr.mm = rs[1].replace(/-/g, "") - 1;
-                    dateArr.dd = rs[2].replace(/-/g, "") - 1;
-                } else {
-                    dateArr.yy = dateArr.yy + 1900 - _self.minY;
-                }
-                _self.gearDate.querySelector(".date_yy").setAttribute("val", dateArr.yy);
-                _self.gearDate.querySelector(".date_mm").setAttribute("val", dateArr.mm);
-                _self.gearDate.querySelector(".date_dd").setAttribute("val", dateArr.dd);
+            //初始省份插件
+            function provinceCtrlInit(defaults) {
+                _self.gearDate.querySelector(".date_yy").setAttribute("val", "0");
                 setDateGearTooth();
             }
-            //呼出年月插件
-            function popupYM(e) {
+            //呼出城市插件
+            function popupCity(e) {
                 _self.gearDate = document.createElement("div");
                 _self.gearDate.className = "gearDate";
                 _self.gearDate.innerHTML = '<div class="date_ctrl slideInUp">' +
@@ -182,13 +106,13 @@ window.datePicker = (function() {
                     '</div>' +
                     '</div><div class="date_bg" style="width:100%;height:100%;"></div>';
                 document.body.appendChild(_self.gearDate);
-                ymCtrlInit();
+                cityCtrlInit();
                 var lcalendar_cancel = _self.gearDate.querySelector(".lcalendar_cancel");
-                lcalendar_cancel.addEventListener('touchstart', closeAddressCalendar);
+                lcalendar_cancel.addEventListener('touchstart', closeAddressAlert);
                 var lcalendar_finish = _self.gearDate.querySelector(".lcalendar_finish");
                 lcalendar_finish.addEventListener('touchstart', finishMobileYM);
                 var lcalendar_bg = _self.gearDate.querySelector(".date_bg");
-                lcalendar_bg.addEventListener('click', closeAddressCalendar);
+                lcalendar_bg.addEventListener('click', closeAddressAlert);
                 var date_yy = _self.gearDate.querySelector(".date_yy");
                 var date_mm = _self.gearDate.querySelector(".date_mm");
                 date_yy.addEventListener('touchstart', gearTouchStart);
@@ -198,7 +122,7 @@ window.datePicker = (function() {
                 date_yy.addEventListener('touchend', gearTouchEnd);
                 date_mm.addEventListener('touchend', gearTouchEnd);
                 //-------------------------------------------------------------
-                lcalendar_cancel.addEventListener('click', closeAddressCalendar);
+                lcalendar_cancel.addEventListener('click', closeAddressAlert);
                 lcalendar_finish.addEventListener('click', finishMobileYM);
                 date_yy.addEventListener('mousedown', gearTouchStart);
                 date_mm.addEventListener('mousedown', gearTouchStart);
@@ -209,148 +133,15 @@ window.datePicker = (function() {
                 _self.gearDate.querySelector(".date_roll_mask").addEventListener('mouseleave', gearTouchOut);
                 _self.gearDate.querySelector(".date_roll_mask").addEventListener('mouseup', gearTouchOut);
             }
-            //初始化年月插件默认值
-            function ymCtrlInit() {
-                var date = new Date();
-                var dateArr = {
-                    yy: date.getYear(),
-                    mm: date.getMonth()
-                };
-                if (/^\d{4}-\d{1,2}$/.test(_self.trigger.value)) {
-                    rs = _self.trigger.value.match(/(^|-)\d{1,4}/g);
-                    dateArr.yy = rs[0] - _self.minY;
-                    dateArr.mm = rs[1].replace(/-/g, "") - 1;
-                } else {
-                    dateArr.yy = dateArr.yy + 1900 - _self.minY;
-                }
-                _self.gearDate.querySelector(".date_yy").setAttribute("val", dateArr.yy);
-                _self.gearDate.querySelector(".date_mm").setAttribute("val", dateArr.mm);
+            //初始化城市插件
+            function cityCtrlInit() {
+                _self.gearDate.querySelector(".date_yy").setAttribute("val", "0");
+                _self.gearDate.querySelector(".date_mm").setAttribute("val", "0");
+                // debugger;
                 setDateGearTooth();
             }
-            //呼出日期+时间插件
-            function popupDateTime(e) {
-                _self.gearDate = document.createElement("div");
-                _self.gearDate.className = "gearDatetime";
-                _self.gearDate.innerHTML = '<div class="date_ctrl slideInUp">' +
-                    '<div class="date_btn_box">' +
-                    '<div class="date_btn lcalendar_cancel">取消</div>' +
-                    '<div class="date_title">'+ _self.title +'</div>'+
-                    '<div class="date_btn lcalendar_finish">确定</div>' +
-                    '</div>' +
-                    '<div class="date_roll_mask">' +
-                    '<div class="datetime_roll">' +
-                    '<div>' +
-                    '<div class="gear date_yy" data-datetype="date_yy"></div>' +
-                    '<div class="date_grid">' +
-                    '<div>年</div>' +
-                    '</div>' +
-                    '</div>' +
-                    '<div>' +
-                    '<div class="gear date_mm" data-datetype="date_mm"></div>' +
-                    '<div class="date_grid">' +
-                    '<div>月</div>' +
-                    '</div>' +
-                    '</div>' +
-                    '<div>' +
-                    '<div class="gear date_dd" data-datetype="date_dd"></div>' +
-                    '<div class="date_grid">' +
-                    '<div>日</div>' +
-                    '</div>' +
-                    '</div>' +
-                    '<div>' +
-                    '<div class="gear time_hh" data-datetype="time_hh"></div>' +
-                    '<div class="date_grid">' +
-                    '<div>时</div>' +
-                    '</div>' +
-                    '</div>' +
-                    '<div>' +
-                    '<div class="gear time_mm" data-datetype="time_mm"></div>' +
-                    '<div class="date_grid">' +
-                    '<div>分</div>' +
-                    '</div>' +
-                    '</div>' +
-                    '</div>' + //date_roll
-                    '</div>' + //date_roll_mask
-                    '</div><div class="date_bg" style="width:100%;height:100%;"></div>';
-                document.body.appendChild(_self.gearDate);
-                dateTimeCtrlInit();
-                var lcalendar_cancel = _self.gearDate.querySelector(".lcalendar_cancel");
-                lcalendar_cancel.addEventListener('touchstart', closeAddressCalendar);
-                var lcalendar_finish = _self.gearDate.querySelector(".lcalendar_finish");
-                lcalendar_finish.addEventListener('touchstart', finishMobileDateTime);
-                var lcalendar_bg = _self.gearDate.querySelector(".date_bg");
-                lcalendar_bg.addEventListener('click', closeAddressCalendar);
-                var date_yy = _self.gearDate.querySelector(".date_yy");
-                var date_mm = _self.gearDate.querySelector(".date_mm");
-                var date_dd = _self.gearDate.querySelector(".date_dd");
-                var time_hh = _self.gearDate.querySelector(".time_hh");
-                var time_mm = _self.gearDate.querySelector(".time_mm");
-                date_yy.addEventListener('touchstart', gearTouchStart);
-                date_mm.addEventListener('touchstart', gearTouchStart);
-                date_dd.addEventListener('touchstart', gearTouchStart);
-                time_hh.addEventListener('touchstart', gearTouchStart);
-                time_mm.addEventListener('touchstart', gearTouchStart);
-                date_yy.addEventListener('touchmove', gearTouchMove);
-                date_mm.addEventListener('touchmove', gearTouchMove);
-                date_dd.addEventListener('touchmove', gearTouchMove);
-                time_hh.addEventListener('touchmove', gearTouchMove);
-                time_mm.addEventListener('touchmove', gearTouchMove);
-                date_yy.addEventListener('touchend', gearTouchEnd);
-                date_mm.addEventListener('touchend', gearTouchEnd);
-                date_dd.addEventListener('touchend', gearTouchEnd);
-                time_hh.addEventListener('touchend', gearTouchEnd);
-                time_mm.addEventListener('touchend', gearTouchEnd);
-                //-------------------------------------------------------------
-                lcalendar_cancel.addEventListener('click', closeAddressCalendar);
-                lcalendar_finish.addEventListener('click', finishMobileDateTime);
-                date_yy.addEventListener('mousedown', gearTouchStart);
-                date_mm.addEventListener('mousedown', gearTouchStart);
-                date_dd.addEventListener('mousedown', gearTouchStart);
-                time_hh.addEventListener('mousedown', gearTouchStart);
-                time_mm.addEventListener('mousedown', gearTouchStart);
-                date_yy.addEventListener('mousemove', gearTouchMove);
-                date_mm.addEventListener('mousemove', gearTouchMove);
-                date_dd.addEventListener('mousemove', gearTouchMove);
-                time_hh.addEventListener('mousemove', gearTouchMove);
-                time_mm.addEventListener('mousemove', gearTouchMove);
-                date_yy.addEventListener('mouseup', gearTouchEnd);
-                date_mm.addEventListener('mouseup', gearTouchEnd);
-                date_dd.addEventListener('mouseup', gearTouchEnd);
-                time_hh.addEventListener('mouseup', gearTouchEnd);
-                time_mm.addEventListener('mouseup', gearTouchEnd);
-                _self.gearDate.querySelector(".date_roll_mask").addEventListener('mouseleave', gearTouchOut);
-                _self.gearDate.querySelector(".date_roll_mask").addEventListener('mouseup', gearTouchOut);
-            }
-            //初始化年月日时分插件默认值
-            function dateTimeCtrlInit() {
-                var date = new Date();
-                var dateArr = {
-                    yy: date.getYear(),
-                    mm: date.getMonth(),
-                    dd: date.getDate() - 1,
-                    hh: date.getHours(),
-                    mi: date.getMinutes()
-                };
-                if (/^\d{4}-\d{1,2}-\d{1,2}\s\d{2}:\d{2}$/.test(_self.trigger.value)) {
-                    rs = _self.trigger.value.match(/(^|-|\s|:)\d{1,4}/g);
-                    dateArr.yy = rs[0] - _self.minY;
-                    dateArr.mm = rs[1].replace(/-/g, "") - 1;
-                    dateArr.dd = rs[2].replace(/-/g, "") - 1;
-                    dateArr.hh = parseInt(rs[3].replace(/\s0?/g, ""));
-                    dateArr.mi = parseInt(rs[4].replace(/:0?/g, ""));
-                } else {
-                    dateArr.yy = dateArr.yy + 1900 - _self.minY;
-                }
-                _self.gearDate.querySelector(".date_yy").setAttribute("val", dateArr.yy);
-                _self.gearDate.querySelector(".date_mm").setAttribute("val", dateArr.mm);
-                _self.gearDate.querySelector(".date_dd").setAttribute("val", dateArr.dd);
-                setDateGearTooth();
-                _self.gearDate.querySelector(".time_hh").setAttribute("val", dateArr.hh);
-                _self.gearDate.querySelector(".time_mm").setAttribute("val", dateArr.mi);
-                setTimeGearTooth();
-            }
-            //呼出时间插件
-            function popupTime(e) {
+            //呼出城区插件
+            function popupCountry(e) {
                 _self.gearDate = document.createElement("div");
                 _self.gearDate.className = "gearDate";
                 _self.gearDate.innerHTML = '<div class="date_ctrl slideInUp">' +
@@ -360,77 +151,82 @@ window.datePicker = (function() {
                     '<div class="date_btn lcalendar_finish">确定</div>' +
                     '</div>' +
                     '<div class="date_roll_mask">' +
-                    '<div class="time_roll">' +
+                    '<div class="date_roll">' +
                     '<div>' +
-                    '<div class="gear time_hh" data-datetype="time_hh"></div>' +
+                    '<div class="gear date_yy" data-datetype="date_yy"></div>' +
                     '<div class="date_grid">' +
-                    '<div>时</div>' +
+                    '<div></div>' +
                     '</div>' +
                     '</div>' +
                     '<div>' +
-                    '<div class="gear time_mm" data-datetype="time_mm"></div>' +
+                    '<div class="gear date_mm" data-datetype="date_mm"></div>' +
                     '<div class="date_grid">' +
-                    '<div>分</div>' +
+                    '<div></div>' +
                     '</div>' +
                     '</div>' +
-                    '</div>' + //time_roll
+                    '<div>' +
+                    '<div class="gear date_dd" data-datetype="date_dd"></div>' +
+                    '<div class="date_grid">' +
+                    '<div></div>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>' +
                     '</div>' +
                     '</div><div class="date_bg" style="width:100%;height:100%;"></div>';
                 document.body.appendChild(_self.gearDate);
-                timeCtrlInit();
+                countryCtrlInit();
                 var lcalendar_cancel = _self.gearDate.querySelector(".lcalendar_cancel");
-                lcalendar_cancel.addEventListener('touchstart', closeAddressCalendar);
+                lcalendar_cancel.addEventListener('touchstart', closeAddressAlert);
                 var lcalendar_finish = _self.gearDate.querySelector(".lcalendar_finish");
-                lcalendar_finish.addEventListener('touchstart', finishMobileTime);
+                lcalendar_finish.addEventListener('touchstart', finishMobileDate);
                 var lcalendar_bg = _self.gearDate.querySelector(".date_bg");
-                lcalendar_bg.addEventListener('click', closeAddressCalendar);
-                var time_hh = _self.gearDate.querySelector(".time_hh");
-                var time_mm = _self.gearDate.querySelector(".time_mm");
-                time_hh.addEventListener('touchstart', gearTouchStart);
-                time_mm.addEventListener('touchstart', gearTouchStart);
-                time_hh.addEventListener('touchmove', gearTouchMove);
-                time_mm.addEventListener('touchmove', gearTouchMove);
-                time_hh.addEventListener('touchend', gearTouchEnd);
-                time_mm.addEventListener('touchend', gearTouchEnd);
+                lcalendar_bg.addEventListener('click', closeAddressAlert);
+                var date_yy = _self.gearDate.querySelector(".date_yy");
+                var date_mm = _self.gearDate.querySelector(".date_mm");
+                var date_dd = _self.gearDate.querySelector(".date_dd");
+                date_yy.addEventListener('touchstart', gearTouchStart);
+                date_mm.addEventListener('touchstart', gearTouchStart);
+                date_dd.addEventListener('touchstart', gearTouchStart);
+                date_yy.addEventListener('touchmove', gearTouchMove);
+                date_mm.addEventListener('touchmove', gearTouchMove);
+                date_dd.addEventListener('touchmove', gearTouchMove);
+                date_yy.addEventListener('touchend', gearTouchEnd);
+                date_mm.addEventListener('touchend', gearTouchEnd);
+                date_dd.addEventListener('touchend', gearTouchEnd);
                 //-------------------------------------------------------------
-                lcalendar_cancel.addEventListener('click', closeAddressCalendar);
-                lcalendar_finish.addEventListener('click', finishMobileTime);
-                time_hh.addEventListener('mousedown', gearTouchStart);
-                time_mm.addEventListener('mousedown', gearTouchStart);
-                time_hh.addEventListener('mousemove', gearTouchMove);
-                time_mm.addEventListener('mousemove', gearTouchMove);
-                time_hh.addEventListener('mouseup', gearTouchEnd);
-                time_mm.addEventListener('mouseup', gearTouchEnd);
+                lcalendar_cancel.addEventListener('click', closeAddressAlert);
+                lcalendar_finish.addEventListener('click', finishMobileDate);
+                date_yy.addEventListener('mousedown', gearTouchStart);
+                date_mm.addEventListener('mousedown', gearTouchStart);
+                date_dd.addEventListener('mousedown', gearTouchStart);
+                date_yy.addEventListener('mousemove', gearTouchMove);
+                date_mm.addEventListener('mousemove', gearTouchMove);
+                date_dd.addEventListener('mousemove', gearTouchMove);
+                date_yy.addEventListener('mouseup', gearTouchEnd);
+                date_mm.addEventListener('mouseup', gearTouchEnd);
+                date_dd.addEventListener('mouseup', gearTouchEnd);
                 _self.gearDate.querySelector(".date_roll_mask").addEventListener('mouseleave', gearTouchOut);
                 _self.gearDate.querySelector(".date_roll_mask").addEventListener('mouseup', gearTouchOut);
             }
-            //初始化时分插件默认值
-            function timeCtrlInit() {
-                var d = new Date();
-                var e = {
-                    hh: d.getHours(),
-                    mm: d.getMinutes()
-                };
-                if (/^\d{2}:\d{2}$/.test(_self.trigger.value)) {
-                    rs = _self.trigger.value.match(/(^|:)\d{2}/g);
-                    e.hh = parseInt(rs[0].replace(/^0?/g, ""));
-                    e.mm = parseInt(rs[1].replace(/:0?/g, ""))
-                }
-                _self.gearDate.querySelector(".time_hh").setAttribute("val", e.hh);
-                _self.gearDate.querySelector(".time_mm").setAttribute("val", e.mm);
-                setTimeGearTooth();
+            //初始化城区插件
+            function countryCtrlInit(defaults) {
+                _self.gearDate.querySelector(".date_yy").setAttribute("val", "0");
+                _self.gearDate.querySelector(".date_mm").setAttribute("val", "0");
+                _self.gearDate.querySelector(".date_dd").setAttribute("val", "0");
+                setDateGearTooth();
             }
             //重置日期节点个数
             function setDateGearTooth() {
-                var passY = _self.maxY - _self.minY + 1;
+                var passY = _self.areaData.length;
+                // var passY = 28;
                 var date_yy = _self.gearDate.querySelector(".date_yy");
                 var itemStr = "";
                 if (date_yy && date_yy.getAttribute("val")) {
                     //得到年份的值
                     var yyVal = parseInt(date_yy.getAttribute("val"));
                     //p 当前节点前后需要展示的节点个数
-                    for (var p = 0; p <= passY - 1; p++) {
-                        itemStr += "<div class='tooth'>" + (_self.minY + p) + "</div>";
+                    for (var p = 0; p < passY; p++) {
+                        itemStr += "<div class='tooth'>" + (_self.areaData[p]["name"]) + "</div>";
                     }
                     date_yy.innerHTML = itemStr;
                     var top = Math.floor(parseFloat(date_yy.getAttribute('top')));
@@ -451,23 +247,17 @@ window.datePicker = (function() {
                     return;
                 }
                 var date_mm = _self.gearDate.querySelector(".date_mm");
-                if (date_mm && date_mm.getAttribute("val")) {
+                if (date_mm && date_yy.getAttribute("val")) {
                     itemStr = "";
                     //得到月份的值
                     var mmVal = parseInt(date_mm.getAttribute("val"));
-                    var maxM = 11;
+                    var yyVal = parseInt(date_yy.getAttribute("val"));
+                    var maxM = this.areaData[yyVal]['child'].length - 1;
                     var minM = 0;
-                    //当年份到达最大值
-                    if (yyVal == passY - 1) {
-                        maxM = _self.maxM - 1;
-                    }
-                    //当年份到达最小值
-                    if (yyVal == 0) {
-                        minM = _self.minM - 1;
-                    }
                     //p 当前节点前后需要展示的节点个数
-                    for (var p = 0; p < maxM - minM + 1; p++) {
-                        itemStr += "<div class='tooth'>" + (minM + p + 1) + "</div>";
+                    for (var p = 0; p < maxM + 1; p++) {
+                        // itemStr += "<div class='tooth'>" + (minM + p + 1) + "</div>";
+                        itemStr += "<div class='tooth'>" + this.areaData[yyVal]['child'][p].name + "</div>";
                     }
                     date_mm.innerHTML = itemStr;
                     if (mmVal > maxM) {
@@ -477,6 +267,7 @@ window.datePicker = (function() {
                         mmVal = maxM;
                         date_mm.setAttribute("val", mmVal);
                     }
+                    // console.log(8 - (mmVal - minM) * 2);
                     date_mm.style["-webkit-transform"] = 'translate3d(0,' + (8 - (mmVal - minM) * 2) + 'em,0)';
                     date_mm.setAttribute('top', 8 - (mmVal - minM) * 2 + 'em');
                 } else {
@@ -487,21 +278,13 @@ window.datePicker = (function() {
                     itemStr = "";
                     //得到日期的值
                     var ddVal = parseInt(date_dd.getAttribute("val"));
-                    //返回月份的天数
-                    var maxMonthDays = calcDays(yyVal, mmVal);
+                    var mmVal = parseInt(date_mm.getAttribute("val"));
+                    var yyVal = parseInt(date_yy.getAttribute("val"));
                     //p 当前节点前后需要展示的节点个数
-                    var maxD = maxMonthDays - 1;
+                    var maxD = this.areaData[yyVal]['child'][mmVal]['child'].length - 1;
                     var minD = 0;
-                    //当年份月份到达最大值
-                    if (yyVal == passY - 1 && _self.maxM == mmVal + 1) {
-                        maxD = _self.maxD - 1;
-                    }
-                    //当年、月到达最小值
-                    if (yyVal == 0 && _self.minM == mmVal + 1) {
-                        minD = _self.minD - 1;
-                    }
-                    for (var p = 0; p < maxD - minD + 1; p++) {
-                        itemStr += "<div class='tooth'>" + (minD + p + 1) + "</div>";
+                    for (var p = 0; p < maxD + 1; p++) {
+                        itemStr += "<div class='tooth'>" + this.areaData[yyVal]['child'][mmVal]['child'][p].name + "</div>";
                     }
                     date_dd.innerHTML = itemStr;
                     if (ddVal > maxD) {
@@ -517,58 +300,13 @@ window.datePicker = (function() {
                     return;
                 }
             }
-            //重置时间节点个数
-            function setTimeGearTooth() {
-                var time_hh = _self.gearDate.querySelector(".time_hh");
-                if (time_hh && time_hh.getAttribute("val")) {
-                    var i = "";
-                    var hhVal = parseInt(time_hh.getAttribute("val"));
-                    for (var g = 0; g <= 23; g++) {
-                        i += "<div class='tooth'>" + g + "</div>";
-                    }
-                    time_hh.innerHTML = i;
-                    time_hh.style["-webkit-transform"] = 'translate3d(0,' + (8 - hhVal * 2) + 'em,0)';
-                    time_hh.setAttribute('top', 8 - hhVal * 2 + 'em');
-                } else {
-                    return
-                }
-                var time_mm = _self.gearDate.querySelector(".time_mm");
-                if (time_mm && time_mm.getAttribute("val")) {
-                    var i = "";
-                    var mmVal = parseInt(time_mm.getAttribute("val"));
-                    for (var g = 0; g <= 59; g++) {
-                        i += "<div class='tooth'>" + g + "</div>";
-                    }
-                    time_mm.innerHTML = i;
-                    time_mm.style["-webkit-transform"] = 'translate3d(0,' + (8 - mmVal * 2) + 'em,0)';
-                    time_mm.setAttribute('top', 8 - mmVal * 2 + 'em');
-                } else {
-                    return
-                }
-            }
-            //求月份最大天数
-            function calcDays(year, month) {
-                if (month == 1) {
-                    year += _self.minY;
-                    if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0 && year % 4000 != 0)) {
-                        return 29;
-                    } else {
-                        return 28;
-                    }
-                } else {
-                    if (month == 3 || month == 5 || month == 8 || month == 10) {
-                        return 30;
-                    } else {
-                        return 31;
-                    }
-                }
-            }
             //触摸开始
             function gearTouchStart(e) {
-            	if (isMoved || isTouched) return;            	
+            	if (isMoved || isTouched) return;
                 isTouched = true;
                 e.preventDefault();
                 var target = e.target;
+
                 while (true) {
                     if (!target.classList.contains("gear")) {
                         target = target.parentElement;
@@ -650,9 +388,11 @@ window.datePicker = (function() {
             function rollGear(target) {
                 var d = 0;
                 var stopGear = false;
-                var passY = _self.maxY - _self.minY + 1;
+                // var passY = _self.maxY - _self.minY + 1; **
+                var passY = _self.areaData.length;
                 clearInterval(target["int_" + target.id]);
                 target["int_" + target.id] = setInterval(function() {
+                    // debugger
                     var pos = target["pos_" + target.id];
                     var speed = target["spd_" + target.id] * Math.exp(-0.1 * d);
                     pos += speed;
@@ -690,16 +430,8 @@ window.datePicker = (function() {
                             var date_yy = _self.gearDate.querySelector(".date_yy");
                             //得到年份的值
                             var yyVal = parseInt(date_yy.getAttribute("val"));
-                            var maxM = 11;
+                            var maxM = this.areaData[yyVal]['child'].length - 1;
                             var minM = 0;
-                            //当年份到达最大值
-                            if (yyVal == passY - 1) {
-                                maxM = _self.maxM - 1;
-                            }
-                            //当年份到达最小值
-                            if (yyVal == 0) {
-                                minM = _self.minM - 1;
-                            }
                             var minTop = 8 - (maxM - minM) * 2;
                             if (pos < minTop) {
                                 pos = minTop;
@@ -719,17 +451,8 @@ window.datePicker = (function() {
                             //得到月份的值
                             var mmVal = parseInt(date_mm.getAttribute("val"));
                             //返回月份的天数
-                            var maxMonthDays = calcDays(yyVal, mmVal);
-                            var maxD = maxMonthDays - 1;
+                            var maxD = this.areaData[yyVal]['child'][mmVal]['child'].length - 1;
                             var minD = 0;
-                            //当年份月份到达最大值
-                            if (yyVal == passY - 1 && _self.maxM == mmVal + 1) {
-                                maxD = _self.maxD - 1;
-                            }
-                            //当年、月到达最小值
-                            if (yyVal == 0 && _self.minM == mmVal + 1) {
-                                minD = _self.minD - 1;
-                            }
                             var minTop = 8 - (maxD - minD) * 2;
                             if (pos < minTop) {
                                 pos = minTop;
@@ -737,28 +460,6 @@ window.datePicker = (function() {
                             }
                             if (stopGear) {
                                 var gearVal = Math.abs(pos - 8) / 2 + minD;
-                                setGear(target, gearVal);
-                                clearInterval(target["int_" + target.id]);
-                            }
-                            break;
-                        case "time_hh":
-                            if (pos < -38) {
-                                pos = -38;
-                                stopGear = true;
-                            }
-                            if (stopGear) {
-                                var gearVal = Math.abs(pos - 8) / 2;
-                                setGear(target, gearVal);
-                                clearInterval(target["int_" + target.id]);
-                            }
-                            break;
-                        case "time_mm":
-                            if (pos < -110) {
-                                pos = -110;
-                                stopGear = true;
-                            }
-                            if (stopGear) {
-                                var gearVal = Math.abs(pos - 8) / 2;
                                 setGear(target, gearVal);
                                 clearInterval(target["int_" + target.id]);
                             }
@@ -782,7 +483,7 @@ window.datePicker = (function() {
                 }
             }
             //取消
-            function closeAddressCalendar(e) {
+            function closeAddressAlert(e) {
                 e.preventDefault();
                 isTouched = isMoved = false;
                 if(_self.onClose) _self.onClose();
@@ -801,7 +502,7 @@ window.datePicker = (function() {
                 _self.trigger.value = (date_yy % passY + _self.minY) + "-" + date_mm + "-" + date_dd;
                 _self.value = _self.trigger.value;
                 if(_self.onSubmit) _self.onSubmit();
-                closeAddressCalendar(e);
+                closeAddressAlert(e);
             }
             //年月确认
             function finishMobileYM(e) {
@@ -812,7 +513,7 @@ window.datePicker = (function() {
                 _self.trigger.value = (date_yy % passY + _self.minY) + "-" + date_mm;
                 _self.value = _self.trigger.value;
                 if(_self.onSubmit) _self.onSubmit();
-                closeAddressCalendar(e);
+                closeAddressAlert(e);
             }
             //日期时间确认
             function finishMobileDateTime(e) {
@@ -829,7 +530,7 @@ window.datePicker = (function() {
                 _self.trigger.value = (date_yy % passY + _self.minY) + "-" + date_mm + "-" + date_dd + " " + (time_hh.length < 2 ? "0" : "") + time_hh + (time_mm.length < 2 ? ":0" : ":") + time_mm;
                 _self.value = _self.trigger.value;
                 if(_self.onSubmit) _self.onSubmit();
-                closeAddressCalendar(e);
+                closeAddressAlert(e);
             }
             //时间确认
             function finishMobileTime(e) {
@@ -840,13 +541,12 @@ window.datePicker = (function() {
                 _self.trigger.value = (time_hh.length < 2 ? "0" : "") + time_hh + (time_mm.length < 2 ? ":0" : ":") + time_mm;
                 _self.value = _self.trigger.value;
                 if(_self.onSubmit) _self.onSubmit();
-                closeAddressCalendar(e);
+                closeAddressAlert(e);
             }
             _self.trigger.addEventListener('click', {
-                "ym": popupYM,
-                "date": popupDate,
-                "datetime": popupDateTime,
-                "time": popupTime
+                "province": popupProvince,
+                "city": popupCity,
+                "country": popupCountry
             }[type]);
         }
     }
